@@ -1,0 +1,26 @@
+#email_container {
+    display: inline-block;
+}
+
+#password_container   {
+    display: inline-block;
+}
+
+#checkbox_container    {
+    display: inline-block;
+}
+
+
+
+#email_login_container  {
+   display: inline-block;
+}
+
+#password_login_container   {
+     display: inline-block;
+}
+
+#login_checkbox_container   {
+    display: inline-block;
+}
+
