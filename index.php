@@ -121,6 +121,162 @@
     mysqli_query($link, $query3);
 
     Updating ends here    */
+
+    $link =  mysqli_connect("shareddb-v.hosting.stackcp.net", "userss-313437cefd", "U!%&G(P'F.AT", "userss-313437cefd");
+   
+    if ( mysqli_connect_error() ) {
+      die ("There was an error connecting to the database");
+    } 
+
+      $email_signUp = false; 
+      $password_signUp = false;
+      $errors = "";
+
+      if ( isset($_POST['sign_Up']) )  {
+
+        $signUp_email = $_POST['email_signUp']; 
+        $signUp_password = $_POST['password_signUp']; 
+
+        if ( $signUp_email == "" )  {
+          $errors .= "Email field is required." . "<br>";
+        } else  {
+          $email_signUp = true; 
+        }
+
+        if ( $signUp_password == "" ) {
+          $errors .= "Password field is required." . "<br>";
+          echo "Empty";
+        } else  {
+          $password_signUp = true; 
+        }
+        
+          $duplicate_email = false; 
+        
+        if ( $email_signUp && $password_signUp )  {
+          // Check if there is already an existing email in the database 
+            $email_query = "SELECT `email` from users"; 
+
+            if ( $result = mysqli_query($link, $email_query) )  {
+                  //echo "hello" . "<br>";
+
+                while ( $row = mysqli_fetch_array($result) )  {
+                    
+                    if ( $signUp_email == $row['email'] ) {
+                        //  echo "The email already exists" . "<br>"; 
+                          $duplicate_email = true; 
+                          break;
+                      
+                    } 
+                
+              }
+              
+              // Checking if there is an email that already exists in the database
+              if ( !$duplicate_email )  {
+                // Can add it to the database 
+                  $query_add = "INSERT INTO users (`email`, `password`) VALUES ('$signUp_email', '$signUp_password')";
+                  mysqli_query($link, $query_add);
+                  echo "You have signed up!" . "<br>"; 
+                //INSERT INTO users (`email`, `password`) VALUES('rammerbot64@gmail.com', 'dkdkdkk231$%^') ";
+              } else  {
+                  echo "The email already exists" . "<br>"; 
+              }
+
+            }
+
+        } else  {
+            echo $errors;
+        }
+
+    }
+    
+   // if ( $email_signUp && $password_signUp )  {
+     // echo "You have signed up!" . "<br>";
+    //} else  {
+     // echo $errors; 
+    //}
+    // End of checking if sign up is filled out. 
+
+    // START: checking if login is filled out 
+
+        $errors_login = "";
+        $valid_login_email = false;
+        $valid_password_email = false; 
+        $dupe_email_login = false;
+
+    if ( isset($_POST['login']) )  {
+
+      $login_email = $_POST['email_Login']; 
+      $login_password = $_POST['password_Login']; 
+
+      if ( $login_email == "" )  {
+        $errors_login .= "Email field is required." . "<br>";
+      } else  {
+        $valid_login_email = true; 
+      }
+
+      if ( $login_password == "" ) {
+        $errors .= "Password field is required." . "<br>";
+        echo "Empty";
+      } else  {
+        $valid_password_email = true; 
+      }
+      
+        $dupe_email_login = false; 
+      
+      if ( $valid_login_email && $valid_password_email )  {
+        // Check if there is already an existing email in the database 
+          $login_email_query = "SELECT `email` from users"; 
+
+          if ( $result = mysqli_query($link, $login_email_query) )  {
+                //echo "hello" . "<br>";
+
+              while ( $row = mysqli_fetch_array($result) )  {
+                  
+                  if ( $login_email == $row['email'] ) {
+                      //  echo "The email already exists" . "<br>"; 
+                        $duplicate_email = true; 
+                        break;
+                    
+                  } 
+              
+            }
+
+            
+            // NOTE: Login is a little bit different, we don't want to insert. Instead, we want 
+            // to check if the email exists in the database. If it does, then proceed with login
+            // else if it does not then do not proceed with login. 
+            
+            // Make sure that all fields are filled out for login. 
+            // Checking if there is an email that already exists in the database
+          
+            if ( !$dupe_email_login )  {
+              // Can add it to the database 
+             //   $login_query = "INSERT INTO users (`email`, `password`) VALUES ('$login_email', '$login_password')";
+                mysqli_query($link, $login_query);
+                echo "You have logged in!" . "<br>"; 
+              //INSERT INTO users (`email`, `password`) VALUES('rammerbot64@gmail.com', 'dkdkdkk231$%^') ";
+            } else  {
+                echo "The email already exists" . "<br>"; 
+            }
+
+          }
+
+      } else  {
+          echo $errors;
+      }
+
+  }
+
+
+    
+    
+    // END: checking if login is filled out 
+
+
+    // Check if checkbox is checked to be kept logged in 
+
+
+    print_r($_POST); 
 ?>
 
  <html> 
@@ -136,33 +292,33 @@
       
 
       <div id = "email_container"> 
-        <input type = "text" class = "email" id = "email" name = "email" placeholder = "Your email"> <br> 
+        <input type = "text" class = "email" id = "email" name = "email_signUp" placeholder = "Your email"> <br> 
       </div>
 
       <div id = "password_container">
-        <input type = "password" id = "password" name = "password" placeholder = "password"> <br> 
+        <input type = "password" id = "password" name = "password_signUp" placeholder = "password"> <br> 
       </div>
 
       <div id = "checkbox_container"> 
         <input type = "checkbox" id = "signUp_checkbox">
-        <input type = "submit" value = "Sign Up">
+        <input type = "submit" name = "sign_Up" value = "Sign Up">
       </div>
 
   
       <div id = "seperator"> </div> 
 
       <div id = "email_login_container"> 
-        <input type = "text" class = "email" name = "email" placeholder = "Your email"> 
+        <input type = "text" class = "email" name = "email_Login" placeholder = "Your email"> 
       </div>
 
 
       <div id = "password_login_container"> 
-        <input type = "text" class = "pass" name = "password" placeholder = "Password">
+        <input type = "password" class = "pass" name = "password_Login" placeholder = "Password">
      </div> 
 
      <div id = "login_checkbox_container"> 
        <input type = "checkbox" id = "login_checkbox"> 
-       <input type = "submit" value = "Login"> 
+       <input type = "submit" name = "login" value = "Login"> 
      </div> 
 
       </form> 
