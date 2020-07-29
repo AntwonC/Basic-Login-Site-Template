@@ -1,5 +1,4 @@
 <?php
-
     // Value should be static.
   // $row['id'] = 73; // Level 4 encryption. Pile up md5's and it might be more difficult to get.
   //  $salt = "eeiofdasjdsia123213"; // Level 2. Append it the md5. 
@@ -122,162 +121,299 @@
 
     Updating ends here    */
 
-    $link =  mysqli_connect("shareddb-v.hosting.stackcp.net", "userss-313437cefd", "U!%&G(P'F.AT", "userss-313437cefd");
-   
-    if ( mysqli_connect_error() ) {
-      die ("There was an error connecting to the database");
+
+   session_start(); 
+    ob_start();
+
+    // Logs the user out 
+    if ( array_key_exists("logout", $_GET) )  {
+
+      //  echo "We are logging the user out" . "<br>";
+      unset($_SESSION);
+      setcookie("id", "", time() - 60*60);
+      $_COOKIE["id"] = "";
+
+    } else if ( ( array_key_exists("id", $_SESSION) && $_SESSION['id'] )  || ( array_key_exists("id", $_COOKIE) && $_COOKIE['id'] ) ) {
+     
+        header("Location: session.php");
     } 
+    // End of logging the user out
+    
+    // NOTE: In an attempt to go back to the home page when we are logged in, it will redirect us to the logged in page again.
+    // When logged out, the redirect knows its logged out. 
+    // PROBLEM: It still thinks we are logged in when we go back originally. This is because of the unsetting of the cookie. 
+    if ( array_key_exists("submit", $_POST) ) {
+
+      $link =  mysqli_connect("shareddb-v.hosting.stackcp.net", "userss-313437cefd", "U!%&G(P'F.AT", "userss-313437cefd");
+      
+      if ( mysqli_connect_error() ) {
+        die ("There was an error connecting to the database");
+      } 
+    
+   
 
       $email_signUp = false; 
       $password_signUp = false;
       $errors = "";
 
-      if ( isset($_POST['sign_Up']) )  {
+      
 
-        $signUp_email = $_POST['email_signUp']; 
-        $signUp_password = $_POST['password_signUp']; 
-
+      if ( $_POST['signUp'] == '1' )  {
+       
+        $signUp_email = $_POST['signUp_email']; 
+        $signUp_password = md5 ( md5 ( $_POST['signUp_password'] ) ); 
+        
         if ( $signUp_email == "" )  {
           $errors .= "Email field is required." . "<br>";
         } else  {
           $email_signUp = true; 
         }
-
-        if ( $signUp_password == "" ) {
+        
+        // Do it before the md5 
+        if ( $_POST['signUp_password'] == "" ) {
           $errors .= "Password field is required." . "<br>";
-          echo "Empty";
+       
         } else  {
           $password_signUp = true; 
         }
+
         
           $duplicate_email = false; 
-        
-        if ( $email_signUp && $password_signUp )  {
-          // Check if there is already an existing email in the database 
-            $email_query = "SELECT `email` from users"; 
 
-            if ( $result = mysqli_query($link, $email_query) )  {
-                  //echo "hello" . "<br>";
-
-                while ( $row = mysqli_fetch_array($result) )  {
-                    
-                    if ( $signUp_email == $row['email'] ) {
-                        //  echo "The email already exists" . "<br>"; 
-                          $duplicate_email = true; 
-                          break;
-                      
-                    } 
-                
-              }
-              
-              // Checking if there is an email that already exists in the database
-              if ( !$duplicate_email )  {
-                // Can add it to the database 
-                  $query_add = "INSERT INTO users (`email`, `password`) VALUES ('$signUp_email', '$signUp_password')";
-                  mysqli_query($link, $query_add);
-                  echo "You have signed up!" . "<br>"; 
-                //INSERT INTO users (`email`, `password`) VALUES('rammerbot64@gmail.com', 'dkdkdkk231$%^') ";
-              } else  {
-                  echo "The email already exists" . "<br>"; 
-              }
-
-            }
-
-        } else  {
-            echo $errors;
-        }
-
-    }
-    
-   // if ( $email_signUp && $password_signUp )  {
-     // echo "You have signed up!" . "<br>";
-    //} else  {
-     // echo $errors; 
-    //}
-    // End of checking if sign up is filled out. 
-
-    // START: checking if login is filled out 
-
-        $errors_login = "";
-        $valid_login_email = false;
-        $valid_password_email = false; 
-        $dupe_email_login = false;
-
-    if ( isset($_POST['login']) )  {
-
-      $login_email = $_POST['email_Login']; 
-      $login_password = $_POST['password_Login']; 
-
-      if ( $login_email == "" )  {
-        $errors_login .= "Email field is required." . "<br>";
-      } else  {
-        $valid_login_email = true; 
-      }
-
-      if ( $login_password == "" ) {
-        $errors .= "Password field is required." . "<br>";
-        echo "Empty";
-      } else  {
-        $valid_password_email = true; 
-      }
-      
-        $dupe_email_login = false; 
-      
-      if ( $valid_login_email && $valid_password_email )  {
-        // Check if there is already an existing email in the database 
-          $login_email_query = "SELECT `email` from users"; 
-
-          if ( $result = mysqli_query($link, $login_email_query) )  {
-                //echo "hello" . "<br>";
-
-              while ( $row = mysqli_fetch_array($result) )  {
-                  
-                  if ( $login_email == $row['email'] ) {
-                      //  echo "The email already exists" . "<br>"; 
-                        $duplicate_email = true; 
-                        break;
-                    
-                  } 
-              
-            }
+          if ( $errors == "" )  {
 
             
-            // NOTE: Login is a little bit different, we don't want to insert. Instead, we want 
-            // to check if the email exists in the database. If it does, then proceed with login
-            // else if it does not then do not proceed with login. 
+            $signUp_query = "SELECT id FROM `users` WHERE email = '".mysqli_real_escape_string($link, $signUp_email)."' LIMIT 1";
             
-            // Make sure that all fields are filled out for login. 
-            // Checking if there is an email that already exists in the database
-          
-            if ( !$dupe_email_login )  {
-              // Can add it to the database 
-             //   $login_query = "INSERT INTO users (`email`, `password`) VALUES ('$login_email', '$login_password')";
-                mysqli_query($link, $login_query);
-                echo "You have logged in!" . "<br>"; 
-              //INSERT INTO users (`email`, `password`) VALUES('rammerbot64@gmail.com', 'dkdkdkk231$%^') ";
+            $signUp_result = mysqli_query($link, $signUp_query);
+            $rows = mysqli_num_rows($signUp_result); 
+            
+            echo $rows . "<br>";
+            
+            
+            if ( mysqli_num_rows($signUp_result) > 0 )  {
+              $errors = "That email address is already taken";
+              
             } else  {
-                echo "The email already exists" . "<br>"; 
+              $add_query = "INSERT INTO `users` (`email`, `password`) VALUES ('".mysqli_real_escape_string($link, $signUp_email)."', '".mysqli_real_escape_string($link, $signUp_password)."')";
+              
+              if ( !mysqli_query($link, $add_query) ) {
+                $errors = "<p> Could not sign you up -please try again later. </p>";
+              } else  {
+                
+                $_SESSION['id'] = mysqli_insert_id($link);
+                
+                if ( $_POST['stayLoggedIn'] == '1' )  {
+                  setcookie("id", mysqli_insert_id($link), time() + 60 * 60 * 24 * 365);
+                }
+                
+                if ( $errors == "" )  {
+                  echo "You are signed up!" . "<br>";
+                }
+                
+                // header("Location: session.php");
+              }
             }
+          } else  {
+            echo "There are errors:" . "<br>";
+          }
+          
+        
+          //echo "This is it!";
+
+
+
+
+
+      } else  { // You have to be logging in, instead of signing up.
+
+       // echo "WE will login instead" . "<br>";
+
+
+
+        
+          $valid_login_email = false;
+          $valid_password_email = false; 
+          $dupe_email_login = false;
+      
+          $confirmation = false;
+          $password_confirmation = false;
+
+          $login_email = $_POST['login_email']; 
+          $login_password = md5 ( md5 ( $_POST['login_password'] ) );  // Password is 12345 
+    
+          if ( $login_email == "" )  {
+            $errors .= "Email field is required." . "<br>";
+          } else  {
+            $valid_login_email = true; 
+          }
+    
+          if ( $_POST['login_password'] == "" ) {
+            $errors .= "Password field is required." . "<br>";
+           
+          } else  {
+            $valid_password_email = true; 
+          }
+          
+            $dupe_email_login = false; 
+
+            $query = "SELECT * FROM `users` WHERE email = '".mysqli_real_escape_string($link, $login_email)."'";
+
+            $resultts = mysqli_query($link, $query); 
+
+
+            $row = mysqli_fetch_array($resultts);
+           // echo $row . "<br>";
+            
+           // echo $row['password'] . "<br>";
+            if ( isset($row) )  {
+
+                if ( $login_password == $row['password'] )  {
+
+                    $_SESSION['id'] = $row['id'];
+
+                    if ( $_POST['stayLoggedIn'] == '1' )  {
+                      setcookie("id", mysqli_insert_id($link), time() + 60 * 60 * 24 * 365);
+                    }
+
+                    header("Location: session.php");
+
+                } else  {
+                  $errors .= "Password does not match database";
+
+                  
+                }
+              } else  {
+                $errors = "Email cannot be found in database";
+                
+
+            }
+
+            if ( $errors == "" ) {
+              echo "Error is empty so form is valid." . "<br>";
+                }   else  {
+              echo "Error is not empty so form is not valid" . "<br>";
+              }
 
           }
 
-      } else  {
-          echo $errors;
       }
 
-  }
-
-
+      print_r($_POST);
+          
+        /*  if ( $valid_login_email && $valid_password_email )  {
+            // Check if there is already an existing email in the database 
+              $login_email_query = "SELECT `email` from users"; 
     
+              if ( $result = mysqli_query($link, $login_email_query) )  {
+                    //echo "hello" . "<br>";
+    
+                  while ( $row = mysqli_fetch_array($result) )  {
+                      
+                      if ( $login_email == $row['email'] ) {
+                          //  echo "The email already exists" . "<br>"; 
+                            $dupe_email_login = true; 
+                            break;
+                        
+                      } 
+                  
+                } 
+    
+                
+                // NOTE: Login is a little bit different, we don't want to insert. Instead, we want 
+                // to check if the email exists in the database. If it does, then proceed with login
+                // else if it does not then do not proceed with login. 
+                
+                // Make sure that all fields are filled out for login. 
+                // Checking if there is an email that already exists in the database
+                // Match the password too for login to be successful.
+    
+                
+                
+                if ( $dupe_email_login )  {
+                  // Exists in the database 
+                 //   $login_query = "INSERT INTO users (`email`, `password`) VALUES ('$login_email', '$login_password')";
+                  //  mysqli_query($link, $login_query);
+    
+                    echo "It exists in the database" . "<br>";
+                    
+                    // START: Checking password here in database to see if it matches up 
+                    $pass_query = "SELECT `password` FROM users WHERE email LIKE '$login_email'";
+                    // $query = "SELECT `name` FROM  users WHERE name LIKE '$name' ";
+    
+                    // Running the query 
+                    if ( $pass_result = mysqli_query($link, $pass_query) )  {
+                          // This should only get 1 thing. 
+                        if ( $pass_row = mysqli_fetch_array($pass_result) ) {
+                            // Check if the pass is the same 
+                            if ( $pass_row['password'] == $login_password ) {
+                            //  echo "The password the query got is " . $pass_row['password'] . "<br>";
+                             // echo "The passwords match up" . "<br>";
+    
+                             // Next step: Redirect our user to the page after logged in. 
+                            
+                            // Check if the checkbox is checked. 
+                            // Create a cookie to make sure the user is logged in.
+                          //  echo "Reached the if statement before" . "<br>";
+                          //echo $login_email;
+                          $_SESSION['email'] = $login_email; 
+    
+                            if ( $_POST['stayLoggedIn'] == '1' ) {
+                              
+                           //   echo "The checkbox is checked!" . "<br>"; 
+                              
+                              setcookie("email", "true", time() + 60 * 60 * 24 * 365);
+                            } 
+    
+                             echo "You are logged in!";
+                             header("Location: session.php");
+                             
+                            } else  {
+                              
+                              echo "The passwords do not match up." . "<br>";
+                              
+                            }
+                          }
+                        }
+                        // END: of checking for passwords 
+                        
+                        //INSERT INTO users (`email`, `password`) VALUES('rammerbot64@gmail.com', 'dkdkdkk231$%^') ";
+                      } else  {
+                        
+                        echo "The email does not exist" . "<br>";
+                        
+                      }
+                      
+                    }
+                    
+                  } else  {
+                    echo $errors_login;
+                    print_r($_POST);
+                  } */
+       
+    
+ 
+
+
+ 
+    
+
+              
+            
+
+
     
     // END: checking if login is filled out 
 
+    //if ( $_POST['login'] )
 
     // Check if checkbox is checked to be kept logged in 
 
 
-    print_r($_POST); 
+   // print_r($_POST); 
 ?>
+
+<div id = "error"> <?php echo $errors; ?> </div>
 
  <html> 
       <head> 
@@ -288,7 +424,7 @@
       </head> 
 
     <body> 
-      <form method = "post"> 
+     <!-- <form method = "post"> 
       
 
       <div id = "email_container"> 
@@ -300,8 +436,9 @@
       </div>
 
       <div id = "checkbox_container"> 
-        <input type = "checkbox" id = "signUp_checkbox">
-        <input type = "submit" name = "sign_Up" value = "Sign Up">
+        <input type = "checkbox" name = "stayLoggedIn" id = "signUp_checkbox" value = 1>
+        <input type = "hidden" name = "signUp" value = "1"> 
+        <input type = "submit" name = "submit" value = "Sign Up">
       </div>
 
   
@@ -317,11 +454,39 @@
      </div> 
 
      <div id = "login_checkbox_container"> 
-       <input type = "checkbox" id = "login_checkbox"> 
-       <input type = "submit" name = "login" value = "Login"> 
+       <input type = "checkbox" name = "stayLoggedIn" id = "login_checkbox" value = 1> 
+       <input type = "hidden" name = "login" value = "1">
+       <input type = "submit" name = "submit" value = "Login"> 
      </div> 
 
-      </form> 
+      </form> -->
+   <form method="post">
+
+    <input type="email" name="signUp_email" placeholder="Your Email">
+    
+    <input type="password" name="signUp_password" placeholder="Password">
+    
+    <input type="checkbox" name="stayLoggedIn" value=1>
+    
+    <input type="hidden" name="signUp" value="1">
+        
+    <input type="submit" name="submit" value="Sign Up!">
+
+</form>
+
+<form method="post">
+
+    <input type="email" name="login_email" placeholder="Your Email">
+    
+    <input type="password" name="login_password" placeholder="Password">
+    
+    <input type="checkbox" name="stayLoggedIn" value=1>
+    
+    <input type="hidden" name="signUp" value="0">
+        
+    <input type="submit" name="submit" value="Login!">
+
+</form>
 
   </body> 
 </html>  
